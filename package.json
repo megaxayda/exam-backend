@@ -8,6 +8,9 @@
     "build": "yarn tsc",
     "start": "node dist/index.js"
   },
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.52.0",
     "@ngneat/falso": "^2.25.1",
