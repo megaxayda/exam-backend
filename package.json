@@ -5,7 +5,8 @@
   "scripts": {
     "test": "cross-env NODE_ENV=test ts-mocha -p tsconfig.json src/**/*.test.ts",
     "dev": "cross-env NODE_ENV=dev ts-node-dev --respawn --transpile-only  src/index.ts",
-    "build": "yarn tsc",
+    "heroku-postbuild": "tsc",
+    "build": "yarn heroku-postbuild",
     "start": "node dist/index.js"
   },
   "engines": {
