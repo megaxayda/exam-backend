@@ -1,5 +1,11 @@
 # exam-backend
 
+## Preview
+
+https://exam-backendd.herokuapp.com/api/health
+
+## Setup
+
 Project is using local file as database.
 No need for database initialization.
 
