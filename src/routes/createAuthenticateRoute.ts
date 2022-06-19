@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { Request, Response, Router } from "express";
 import { body } from "express-validator";
 import jwt from "jsonwebtoken";
-import nedb from "../nedb";
+import prisma from "../prisma";
 import catchErrors from "../utils/catchErrors";
 import { SALT_ROUNDS, SUCCESS } from "../utils/constants";
 import validate from "../utils/validate";
@@ -30,27 +30,30 @@ function createAuthenticateRoute(router: Router) {
 async function loginHandler(req: Request, res: Response) {
   const body = req.body;
 
-  nedb.findOne({ username: body.username }, async function (err, doc) {
-    if (!doc) {
-      return res.status(400).send({ msg: "Wrong username or password" });
-    }
-
-    const passCorrect = await bcrypt.compare(body.password, doc.password);
-    if (!passCorrect) {
-      return res.status(400).json({ msg: "Wrong username or password" });
-    }
-
-    const token = jwt.sign(
-      {
-        id: doc._id,
-        email: doc.email,
-      },
-      process.env.SECRET || String(Math.random() * 1000000),
-      { expiresIn: "30d" }
-    );
-
-    return res.json({ token });
+  const getUser = await prisma.user.findUnique({
+    where: { username: body.username },
   });
+
+  if (!getUser) {
+    res.status(400).send({ msg: "Wrong username or password" });
+    return;
+  }
+
+  const passCorrect = await bcrypt.compare(body.password, getUser.password);
+  if (!passCorrect) {
+    return res.status(400).json({ msg: "Wrong username or password" });
+  }
+
+  const token = jwt.sign(
+    {
+      id: getUser.id,
+      username: getUser.username,
+    },
+    process.env.SECRET || String(Math.random() * 1000000),
+    { expiresIn: "30d" }
+  );
+
+  return res.json({ token });
 }
 
 async function registerHandler(req: Request, res: Response) {
@@ -58,19 +61,16 @@ async function registerHandler(req: Request, res: Response) {
 
   const hash = await bcrypt.hash(body.password, SALT_ROUNDS);
 
-  nedb.insert(
-    {
+  await prisma.user.create({
+    data: {
       username: body.username,
       password: hash,
     },
-    function (err, doc) {
-      if (err) {
-        return res.json({ error: err });
-      }
+  });
 
-      return res.json({ message: SUCCESS });
-    }
-  );
+  return res.json({
+    msg: SUCCESS,
+  });
 }
 
 export default createAuthenticateRoute;
